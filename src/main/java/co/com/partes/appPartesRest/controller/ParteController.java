@@ -1,10 +1,9 @@
 package co.com.partes.appPartesRest.controller;
 
-import co.com.partes.appPartesRest.configuration.Notificar;
+import co.com.partes.appPartesRest.configuration.Mail;
 import co.com.partes.appPartesRest.exception.ResourceNotFoundException;
 import co.com.partes.appPartesRest.model.Message;
 import co.com.partes.appPartesRest.model.Parte;
-import co.com.partes.appPartesRest.model.Usuario;
 import co.com.partes.appPartesRest.repository.ParteRepository;
 import java.io.IOException;
 import java.util.List;
@@ -22,9 +21,9 @@ public class ParteController {
 
     @Autowired
     ParteRepository parteRepository;
-    
+
     @Autowired
-    Notificar mail;
+    Mail mail;
 
     // Get All Partes
     @GetMapping("/partes")
@@ -38,7 +37,7 @@ public class ParteController {
         return parteRepository.findById(codigo)
                 .orElseThrow(() -> new ResourceNotFoundException("Parte", "id", codigo));
     }
-    
+
     // Create a new Parte
     @PostMapping("/partes")
     public Parte createParte(@Valid @RequestBody Parte parte) {
@@ -66,10 +65,9 @@ public class ParteController {
         parte.setDescripcion(parteDetails.getDescripcion());
         parte.setCorreo(parteDetails.getCorreo());
 
-        
         Parte updatedParte = parteRepository.save(parte);
         notificar(updatedParte);
-        
+
         return updatedParte;
     }
 
@@ -98,34 +96,27 @@ public class ParteController {
 
         return parteRepository.save(parte);
     }
-    
+
     // Send a notification
     @PostMapping("/notificar")
-    public Message notificar (@RequestBody  Parte item){
-         
-//        List<Parte> partes = parteRepository.findAll();
-//        Parte p = partes.stream()
-//                .filter(comp -> comp.getCorreo().equals(parte.getCorreo()))
-//                .findAny()
-//                .orElse(null);
+    public Message notificar(@RequestBody Parte item) {
 
         if (item != null) {
             System.out.println(item);
- 
+
             try {
-                mail.sendSimpleMessage(item.getCorreo(), "Notificación de nuevo comparendo", 
-                        "Señor(a) (" + item.getInfractor().getGrado().getNombre() + ") " + item.getInfractor().getNombre() + " " + item.getInfractor().getApellidos() 
-                               + ", se le ha elaborado el Comparendo número (" + item.getCodigo() + 
-                                ") por parte de la Policía Militar Aérea. \n Deberá presentarse ante"
-                                       + " el Segundo Comando del CACOM-4.");
-                    return new Message("Se ha enviado la notificación al correo");
+                mail.sendSimpleMessage(item.getCorreo(), "Notificación de nuevo comparendo",
+                        "Señor(a) (" + item.getInfractor().getGrado().getNombre() + ") " + item.getInfractor().getNombre() + " " + item.getInfractor().getApellidos()
+                        + ", se le ha elaborado el Comparendo número (" + item.getCodigo()
+                        + ") por parte de la Policía Militar Aérea. \n Deberá presentarse ante"
+                        + " el Segundo Comando del CACOM-4.",
+                        "mario_ruiz23151@elpoli.edu.co");
+                return new Message("Se ha enviado la notificación al correo");
+            } catch (MailException exception) {
+                exception.printStackTrace();
+                return new Message("Ha ocurrido un error al enviar la notificación");
             }
-            catch (MailException exception) {
-                    exception.printStackTrace();
-                    return new Message("Ha ocurrido un error al enviar la notificación");
-                }
-        }
-        else {
+        } else {
             return new Message("Error en el parte");
         }
     }
